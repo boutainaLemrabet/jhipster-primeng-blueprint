@@ -80,12 +80,9 @@ module.exports = class extends needleClientBase {
         importNeedle,
         moduleNeedle
     ) {
-        const errorMessage = `${chalk.yellow('Reference to ') +
-            angularName +
-            folderName +
-            fileName +
-            enableTranslation +
-            clientFramework} ${chalk.yellow(`not added to ${modulePath}.\n`)}`;
+        const errorMessage = `${
+            chalk.yellow('Reference to ') + angularName + folderName + fileName + enableTranslation + clientFramework
+        } ${chalk.yellow(`not added to ${modulePath}.\n`)}`;
 
         const importRewriteFileModel = this._generateRewriteFileModelWithImportStatement(
             appName,
@@ -124,7 +121,7 @@ module.exports = class extends needleClientBase {
     }
 
     addIcon(iconName) {
-        const iconsPath = `${this.CLIENT_MAIN_SRC_DIR}app/core/icons/font-awesome-icons.ts`;
+        const iconsPath = `${this.CLIENT_MAIN_SRC_DIR}app/core/config/font-awesome-icons.ts`;
         const iconImport = `fa${this.generator.upperFirstCamelCase(iconName)}`;
         if (!jhipsterUtils.checkRegexInFile(iconsPath, new RegExp(`\\b${iconImport}\\b`), this.generator)) {
             try {
@@ -132,7 +129,7 @@ module.exports = class extends needleClientBase {
                     {
                         file: iconsPath,
                         pattern: /(\r?\n)(\s*)\/\/ jhipster-needle-add-icon-import/g,
-                        content: `,\n  ${iconImport}\n  // jhipster-needle-add-icon-import`
+                        content: `\n  ${iconImport},\n  // jhipster-needle-add-icon-import`,
                     },
                     this.generator
                 );
@@ -149,15 +146,21 @@ module.exports = class extends needleClientBase {
         }
     }
 
-    addEntityToMenu(routerName, enableTranslation, entityTranslationKeyMenu) {
+    addEntityToMenu(
+        routerName,
+        enableTranslation,
+        entityTranslationKeyMenu,
+        entityTranslationValue = _.startCase(routerName),
+        jhiPrefix = 'jhi'
+    ) {
         const errorMessage = `${chalk.yellow('Reference to ') + routerName} ${chalk.yellow('not added to menu.\n')}`;
         const entityMenuPath = `${this.CLIENT_MAIN_SRC_DIR}app/layouts/navbar/navbar.component.html`;
         const entityEntry =
             // prettier-ignore
             this.generator.stripMargin(`|<li>
                              |                        <a class="dropdown-item" routerLink="${routerName}" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="collapseNavbar()">
-                             |                            <fa-icon icon="asterisk" fixedWidth="true"></fa-icon>
-                             |                            <span${enableTranslation ? ` jhiTranslate="global.menu.entities.${entityTranslationKeyMenu}"` : ''}>${_.startCase(routerName)}</span>
+                             |                            <fa-icon icon="asterisk" [fixedWidth]="true"></fa-icon>
+                             |                            <span${enableTranslation ? ` ${jhiPrefix}Translate="global.menu.entities.${entityTranslationKeyMenu}"` : ''}>${entityTranslationValue}</span>
                              |                        </a>
                              |                    </li>`);
         const rewriteFileModel = this.generateFileModel(entityMenuPath, 'jhipster-needle-add-entity-to-menu', entityEntry);
@@ -165,14 +168,14 @@ module.exports = class extends needleClientBase {
         this.addBlockContentToFile(rewriteFileModel, errorMessage);
     }
 
-    addElementToMenu(routerName, iconName, enableTranslation, translationKeyMenu = routerName) {
+    addElementToMenu(routerName, iconName, enableTranslation, translationKeyMenu = routerName, jhiPrefix = 'jhi') {
         const errorMessage = `${chalk.yellow('Reference to ') + routerName} ${chalk.yellow('not added to menu.\n')}`;
         const entityMenuPath = `${this.CLIENT_MAIN_SRC_DIR}app/layouts/navbar/navbar.component.html`;
         // prettier-ignore
         const entityEntry = `<li class="nav-item" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
                                 <a class="nav-link" routerLink="${routerName}" (click)="collapseNavbar()">
-                                    <fa-icon icon="${iconName}" fixedWidth="true"></fa-icon>
-                                    <span${enableTranslation ? ` jhiTranslate="global.menu.${translationKeyMenu}"` : ''}>${_.startCase(routerName)}</span>
+                                    <fa-icon icon="${iconName}" [fixedWidth]="true"></fa-icon>
+                                    <span${enableTranslation ? ` ${jhiPrefix}Translate="global.menu.${translationKeyMenu}"` : ''}>${_.startCase(routerName)}</span>
                                 </a>
                             </li>`;
         const rewriteFileModel = this.generateFileModel(entityMenuPath, 'jhipster-needle-add-element-to-menu', entityEntry);
@@ -181,14 +184,14 @@ module.exports = class extends needleClientBase {
         this.addIcon(iconName);
     }
 
-    addElementToAdminMenu(routerName, iconName, enableTranslation, translationKeyMenu = routerName) {
+    addElementToAdminMenu(routerName, iconName, enableTranslation, translationKeyMenu = routerName, jhiPrefix = 'jhi') {
         const errorMessage = `${chalk.yellow('Reference to ') + routerName} ${chalk.yellow('not added to admin menu.\n')}`;
         const navbarAdminPath = `${this.CLIENT_MAIN_SRC_DIR}app/layouts/navbar/navbar.component.html`;
         // prettier-ignore
         const entityEntry = `<li>
                         <a class="dropdown-item" routerLink="${routerName}" routerLinkActive="active" (click)="collapseNavbar()">
-                            <fa-icon icon="${iconName}" fixedWidth="true"></fa-icon>
-                            <span${enableTranslation ? ` jhiTranslate="global.menu.admin.${translationKeyMenu}"` : ''}>${_.startCase(routerName)}</span>
+                            <fa-icon icon="${iconName}" [fixedWidth]="true"></fa-icon>
+                            <span${enableTranslation ? ` ${jhiPrefix}Translate="global.menu.admin.${translationKeyMenu}"` : ''}>${_.startCase(routerName)}</span>
                         </a>
                     </li>`;
         const rewriteFileModel = this.generateFileModel(navbarAdminPath, 'jhipster-needle-add-element-to-admin-menu', entityEntry);
@@ -197,23 +200,24 @@ module.exports = class extends needleClientBase {
         this.addIcon(iconName);
     }
 
-    _addRoute(route, modulePath, moduleName, needleName, filePath, prefix = ',') {
+    _addRoute(route, modulePath, moduleName, needleName, filePath) {
         const isRouteAlreadyAdded = jhipsterUtils.checkStringInFile(filePath, `path: '${route}'`, this.generator);
         if (isRouteAlreadyAdded) {
             return;
         }
         const errorMessage = `${chalk.yellow('Route ') + route + chalk.yellow(` not added to ${filePath}.\n`)}`;
-        const routingEntry = this.generator.stripMargin(`${prefix}
-            |      {
+        const routingEntry = this.generator.stripMargin(
+            `{
             |        path: '${route}',
             |        loadChildren: () => import('${modulePath}').then(m => m.${moduleName})
-            |      }`);
+            |      },`
+        );
         const rewriteFileModel = this.generateFileModel(filePath, needleName, routingEntry);
         this.addBlockContentToFile(rewriteFileModel, errorMessage);
     }
 
     addEntityToModule(entityInstance, entityClass, entityAngularName, entityFolderName, entityFileName, entityUrl, microServiceName) {
-        const entityModulePath = `${this.CLIENT_MAIN_SRC_DIR}app/entities/entity.module.ts`;
+        const entityModulePath = `${this.CLIENT_MAIN_SRC_DIR}app/entities/entity-routing.module.ts`;
         try {
             const isSpecificEntityAlreadyGenerated = jhipsterUtils.checkStringInFile(
                 entityModulePath,
@@ -222,16 +226,12 @@ module.exports = class extends needleClientBase {
             );
 
             if (!isSpecificEntityAlreadyGenerated) {
-                const appName = this.generator.getAngularXAppName();
-                const isAnyEntityAlreadyGenerated = jhipsterUtils.checkStringInFile(entityModulePath, 'loadChildren', this.generator);
-                const prefix = isAnyEntityAlreadyGenerated ? ',' : '';
-
-                const modulePath = `./${entityFolderName}/${entityFileName}.module`;
+                const modulePath = `./${entityFolderName}/${entityFileName}-routing.module`;
                 const moduleName = microServiceName
-                    ? `${this.generator.upperFirstCamelCase(microServiceName)}${entityAngularName}Module`
-                    : `${appName}${entityAngularName}Module`;
+                    ? `${this.generator.upperFirstCamelCase(microServiceName)}${entityAngularName}RoutingModule`
+                    : `${entityAngularName}RoutingModule`;
 
-                this._addRoute(entityUrl, modulePath, moduleName, 'jhipster-needle-add-entity-route', entityModulePath, prefix);
+                this._addRoute(entityUrl, modulePath, moduleName, 'jhipster-needle-add-entity-route', entityModulePath);
             }
         } catch (e) {
             this.generator.debug('Error:', e);

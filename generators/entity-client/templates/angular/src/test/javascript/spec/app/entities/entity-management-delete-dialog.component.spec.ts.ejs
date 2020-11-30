@@ -17,17 +17,15 @@
  limitations under the License.
 -%>
 <%_
-const primaryKeyType = getPkTypeBasedOnDBAndAssociation(authenticationType, databaseType, relationships);
-const tsKeyId = generateTestEntityId(primaryKeyType);
+const tsKeyId = generateTestEntityId(primaryKey);
 _%>
-import { ComponentFixture, TestBed, inject, fakeAsync, tick } from '@angular/core/testing';
-import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { of } from 'rxjs';
-import { JhiEventManager } from 'ng-jhipster';
+jest.mock('@ng-bootstrap/ng-bootstrap');
 
-import { <%= angularXAppName %>TestModule } from '../../../<%= entityParentPathAddition %>test.module';
-import { MockEventManager } from '../../../<%= entityParentPathAddition %>helpers/mock-event-manager.service';
-import { MockActiveModal } from '../../../<%= entityParentPathAddition %>helpers/mock-active-modal.service';
+import { ComponentFixture, TestBed, inject, fakeAsync, tick } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { of } from 'rxjs';
+import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+
 import { <%= entityAngularName %>DeleteDialogComponent } from 'app/entities/<%= entityFolderName %>/<%= entityFileName %>-delete-dialog.component';
 import { <%= entityAngularName %>Service } from 'app/entities/<%= entityFolderName %>/<%= entityFileName %>.service';
 
@@ -36,21 +34,20 @@ describe('Component Tests', () => {
         let comp: <%= entityAngularName %>DeleteDialogComponent;
         let fixture: ComponentFixture<<%= entityAngularName %>DeleteDialogComponent>;
         let service: <%= entityAngularName %>Service;
-        let mockEventManager: MockEventManager;
-        let mockActiveModal: MockActiveModal;
+        let mockActiveModal: NgbActiveModal;
 
         beforeEach(() => {
             TestBed.configureTestingModule({
-                imports: [<%= angularXAppName %>TestModule],
-                declarations: [<%= entityAngularName %>DeleteDialogComponent]
+                imports: [HttpClientTestingModule],
+                declarations: [<%= entityAngularName %>DeleteDialogComponent],
+                providers: [NgbActiveModal]
             })
             .overrideTemplate(<%= entityAngularName %>DeleteDialogComponent, '')
             .compileComponents();
             fixture = TestBed.createComponent(<%= entityAngularName %>DeleteDialogComponent);
             comp = fixture.componentInstance;
-            service = fixture.debugElement.injector.get(<%= entityAngularName %>Service);
-            mockEventManager = TestBed.get(JhiEventManager);
-            mockActiveModal = TestBed.get(NgbActiveModal);
+            service = TestBed.inject(<%= entityAngularName %>Service);
+            mockActiveModal = TestBed.inject(NgbActiveModal);
         });
 
         describe('confirmDelete', () => {
@@ -66,8 +63,7 @@ describe('Component Tests', () => {
 
                         // THEN
                         expect(service.delete).toHaveBeenCalledWith(<%- tsKeyId %>);
-                        expect(mockActiveModal.closeSpy).toHaveBeenCalled();
-                        expect(mockEventManager.broadcastSpy).toHaveBeenCalled();
+                        expect(mockActiveModal.close).toHaveBeenCalledWith('deleted');
                     })
                 )
             );
@@ -81,7 +77,8 @@ describe('Component Tests', () => {
 
                 // THEN
                 expect(service.delete).not.toHaveBeenCalled();
-                expect(mockActiveModal.dismissSpy).toHaveBeenCalled();
+                expect(mockActiveModal.close).not.toHaveBeenCalled();
+                expect(mockActiveModal.dismiss).toHaveBeenCalled();
             });
         });
     });

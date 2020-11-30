@@ -17,49 +17,70 @@
  * limitations under the License.
  */
 /* eslint-disable consistent-return */
-const chalk = require('chalk');
 const writeFiles = require('./files').writeFiles;
 const utils = require('../utils');
 const BaseBlueprintGenerator = require('../generator-base-blueprint');
+const {
+    SUPPORTED_CLIENT_FRAMEWORKS: { ANGULAR },
+} = require('../generator-constants');
 
 let useBlueprints;
 
 module.exports = class extends BaseBlueprintGenerator {
     constructor(args, opts) {
         super(args, opts);
-        utils.copyObjectProps(this, opts.context);
-        this.jhipsterContext = opts.jhipsterContext || opts.context;
-        this.configOptions = opts.configOptions || {};
+        this.entity = opts.context;
 
-        useBlueprints =
-            !this.fromBlueprint &&
-            this.instantiateBlueprints('entity-client', { context: opts.context, debug: opts.context.isDebugEnabled });
+        if (this.jhipsterConfig.clientFramework !== ANGULAR) {
+            // Remove fields with custom ids, drop once templates supports them
+            this.entity = { ...this.entity, fields: this.entity.fields.filter(f => !f.id) };
+        }
+
+        utils.copyObjectProps(this, this.entity);
+        this.jhipsterContext = opts.jhipsterContext || opts.context;
+
+        useBlueprints = !this.fromBlueprint && this.instantiateBlueprints('entity-client', { context: opts.context });
+    }
+
+    // Public API method used by the getter and also by Blueprints
+    _preparing() {
+        return {
+            setup() {
+                this.tsKeyType = this.getTypescriptKeyType(this.primaryKey.type);
+            },
+        };
+    }
+
+    get preparing() {
+        if (useBlueprints) return;
+        return this._preparing();
+    }
+
+    // Public API method used by the getter and also by Blueprints
+    _default() {
+        return super._missingPreDefault();
+    }
+
+    get default() {
+        if (useBlueprints) return;
+        return this._default();
     }
 
     // Public API method used by the getter and also by Blueprints
     _writing() {
-        return writeFiles();
+        return {
+            cleanup() {
+                if (this.isJhipsterVersionLessThan('7.0.0') && this.jhipsterConfig.clientFramework === ANGULAR) {
+                    this.removeFile(`${this.CLIENT_MAIN_SRC_DIR}/app/entities/${this.entityFolderName}/${this.entityFileName}.route.ts`);
+                }
+            },
+            ...writeFiles(),
+            ...super._missingPostWriting(),
+        };
     }
 
     get writing() {
         if (useBlueprints) return;
         return this._writing();
-    }
-
-    // Public API method used by the getter and also by Blueprints
-    _end() {
-        return {
-            end() {
-                if (!this.options['skip-install'] && !this.skipClient) {
-                    this.rebuildClient();
-                }
-                this.log(chalk.bold.green(`Entity ${this.entityNameCapitalized} generated successfully.`));
-            }
-        };
-    }
-
-    get end() {
-        if (useBlueprints) return;
-        return this._end();
     }
 };

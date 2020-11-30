@@ -17,14 +17,13 @@
  limitations under the License.
 -%>
 <%
-const primaryKeyType = getPkTypeBasedOnDBAndAssociation(authenticationType, databaseType, relationships);
-const variablesWithTypes = generateEntityClientFields(primaryKeyType, fields, relationships, dto, undefined, embedded);
+const variablesWithTypes = generateEntityClientFields(primaryKey.type, fields, relationships, dto, undefined, embedded);
 const typeImports = generateEntityClientImports(relationships, dto);
 const defaultVariablesValues = generateEntityClientFieldDefaultValues(fields);
 const enumImports = generateEntityClientEnumImports(fields);
 %>
 <%_ if (fieldsContainInstant || fieldsContainZonedDateTime || fieldsContainLocalDate) { _%>
-import { Moment } from 'moment';
+import * as dayjs from 'dayjs';
 <%_ } _%>
 <%_ typeImports.forEach((importedPath, importedType) => { _%>
     <%_ if (importedType !== `I${entityAngularName}`) { _%>

@@ -17,13 +17,13 @@
  limitations under the License.
 -%>
     <%= entityInstancePlural %>?: I<%= entityAngularName %>[];
-    eventSubscriber?: Subscription;
-    <%_ if (searchEngine === 'elasticsearch') { _%>
+    <%_ if (searchEngine !== false) { _%>
     currentSearch: string;
     <%_ } _%>
+    isLoading = false;
     totalItems = 0;
     itemsPerPage = ITEMS_PER_PAGE;
-    page!: number;
+    page?: number;
     predicate!: string;
     ascending!: boolean;
     ngbPaginationPage = 1;
@@ -32,32 +32,37 @@
         protected <%= entityInstance %>Service: <%= entityAngularName %>Service,
         protected activatedRoute: ActivatedRoute,
         <%_ if (fieldsContainBlob) { _%>
-        protected dataUtils: JhiDataUtils,
+        protected dataUtils: DataUtils,
         <%_ } _%>
         protected router: Router,
-        protected eventManager: JhiEventManager,
         <%_ if (!readOnly) { _%>
         protected modalService: NgbModal
         <%_ } _%>
     ) {
-        <%_ if (searchEngine === 'elasticsearch') { _%>
-        this.currentSearch = this.activatedRoute.snapshot && this.activatedRoute.snapshot.queryParams['search'] ?
-            this.activatedRoute.snapshot.queryParams['search'] : '';
+        <%_ if (searchEngine !== false) { _%>
+        this.currentSearch = this.activatedRoute.snapshot.queryParams['search'] ?? '';
         <%_ } _%>
     }
 
-    loadPage(page?: number): void {
-        const pageToLoad: number = page || this.page;
+    loadPage(page?: number, dontNavigate?: boolean): void {
+        this.isLoading = true;
+        const pageToLoad: number = page ?? this.page ?? 1;
 
-        <%_ if (searchEngine === 'elasticsearch') { _%>
+        <%_ if (searchEngine !== false) { _%>
         if (this.currentSearch) {
             this.<%= entityInstance %>Service.search({
                 page: pageToLoad - 1,
                 query: this.currentSearch,
                 size: this.itemsPerPage,
                 sort: this.sort()}).subscribe(
-                    (res: HttpResponse<I<%= entityAngularName %>[]>) => this.onSuccess(res.body, res.headers, pageToLoad),
-                    () => this.onError()
+                    (res: HttpResponse<I<%= entityAngularName %>[]>) => {
+                        this.isLoading = false;
+                        this.onSuccess(res.body, res.headers, pageToLoad, !dontNavigate);
+                    },
+                    () => {
+                        this.isLoading = false;
+                        this.onError();
+                    }
                 );
             return;
         }
@@ -67,12 +72,22 @@
             page: pageToLoad - 1,
             size: this.itemsPerPage,
             sort: this.sort()}).subscribe(
-                (res: HttpResponse<I<%= entityAngularName %>[]>) => this.onSuccess(res.body, res.headers, pageToLoad),
-                () => this.onError()
+                (res: HttpResponse<I<%= entityAngularName %>[]>) => {
+                    this.isLoading = false;
+                    this.onSuccess(res.body, res.headers, pageToLoad, !dontNavigate);
+                },
+                () => {
+                    this.isLoading = false;
+                    this.onError();
+                }
             );
     }
 
-    <%_ if (searchEngine === 'elasticsearch') { _%>
+    handleSyncList(): void {
+        this.loadPage();
+    }
+
+    <%_ if (searchEngine !== false) { _%>
     search(query: string): void {
         this.currentSearch = query;
         this.loadPage(1);
@@ -80,12 +95,20 @@
     <%_ } _%>
 
     ngOnInit(): void {
-        this.activatedRoute.data.subscribe(data => {
-            this.page = data.pagingParams.page;
-            this.ascending = data.pagingParams.ascending;
-            this.predicate = data.pagingParams.predicate;
-            this.ngbPaginationPage = data.pagingParams.page;
-            this.loadPage();
+        this.handleNavigation();
+    }
+
+    protected handleNavigation(): void {
+        combineLatest([this.activatedRoute.data, this.activatedRoute.queryParamMap]).subscribe(([data, params]) => {
+            const page = params.get('page');
+            const pageNumber = page !== null ? +page : 1;
+            const sort = (params.get('sort') ?? data['defaultSort']).split(',');
+            const predicate = sort[0] || '';
+            const ascending = sort[1] === 'asc';
+            if (pageNumber !== this.page || predicate !== this.predicate || ascending !== this.ascending) {
+              this.predicate = predicate;
+              this.ascending = ascending;
+              this.loadPage(pageNumber, true);
+            }
         });
-        this.registerChangeIn<%= entityClassPlural %>();
     }

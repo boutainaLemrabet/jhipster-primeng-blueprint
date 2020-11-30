@@ -18,12 +18,13 @@
 -%><%
 let helpBlocks = 0; %>
 {
-    "<%= angularAppName %>": {
+    "<%= frontendAppName %>": {
         "<%= entityTranslationKey %>" : {
             "home": {
                 "title": "<%= entityClassPluralHumanized %>",
+                "refreshListLabel": "Refresh list",
                 "createLabel": "สร้าง <%= entityClassHumanized %>",
-                "createOrEditLabel": "สร้างหรือแก้ไข <%= entityClassHumanized %>"<% if (searchEngine === 'elasticsearch') { %>,
+                "createOrEditLabel": "สร้างหรือแก้ไข <%= entityClassHumanized %>"<% if (searchEngine !== false) { %>,
                 "search": "ค้นหา <%= entityClassHumanized %>"<% } %>,
                 "notFound": "No <%= entityClassPluralHumanized %> found"
             },<% if (!microserviceAppName) { %>
