@@ -17,7 +17,7 @@
  limitations under the License.
 -%>
 <%_
-const tsKeyId = generateTestEntityId(pkType, prodDatabaseType);
+const tsKeyId = generateTestEntityId(user.primaryKey);
 _%>
 /* tslint:disable max-line-length */
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
@@ -45,8 +45,9 @@ describe('Component Tests', () => {
 
     beforeEach(() => {
       TestBed.configureTestingModule({
-        imports: [<%= angularXAppName %>TestModule],
-        declarations: [UserManagementComponent]
+          imports: [HttpClientTestingModule],
+          declarations: [UserManagementComponent],
+          providers: [Router, { provide: ActivatedRoute, useValue: { data, queryParamMap } }, AccountService],
       })
         .overrideTemplate(UserManagementComponent, '')
         .compileComponents();

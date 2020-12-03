@@ -21,32 +21,32 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
 <%_ if (enableTranslation) { _%>
-import { LANGUAGES } from 'app/core/language/language.constants';
+import { LANGUAGES } from 'app/core/config/language.constants';
 <%_ } _%>
 import { User } from 'app/core/user/user.model';
 import { UserService } from 'app/core/user/user.service';
 
 @Component({
-    selector: '<%= jhiPrefixDashed %>-user-mgmt-update',
-    templateUrl: './user-management-update.component.html'
+  selector: '<%= jhiPrefixDashed %>-user-mgmt-update',
+  templateUrl: './user-management-update.component.html'
 })
 export class UserManagementUpdateComponent implements OnInit {
-    <%_ if (enableTranslation) { _%>
-    languages = LANGUAGES;
-    <%_ } _%>
-    authorities: string[] = [];
-    isSaving = false;
+  <%_ if (enableTranslation) { _%>
+  languages = LANGUAGES;
+  <%_ } _%>
+  authorities: string[] = [];
+  isSaving = false;
 
-    editForm = this.fb.group({
-        id: [],
-        login: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(50), Validators.pattern('^[_.@A-Za-z0-9-]*')]],
-        firstName: ['', [Validators.maxLength(50)]],
-        lastName: ['', [Validators.maxLength(50)]],
-        email: ['', [Validators.minLength(5), Validators.maxLength(254), Validators.email]],
-        activated: [],
-        langKey: [],
-        authorities: []
-    });
+  editForm = this.fb.group({
+    id: [],
+    login: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(50), Validators.pattern("<%- LOGIN_REGEX %>")]],
+    firstName: ['', [Validators.maxLength(50)]],
+    lastName: ['', [Validators.maxLength(50)]],
+    email: ['', [Validators.minLength(5), Validators.maxLength(254), Validators.email]],
+    activated: [],
+    langKey: [],
+    authorities: [],
+  });
 
     constructor(
         private userService: UserService,
@@ -54,31 +54,30 @@ export class UserManagementUpdateComponent implements OnInit {
         private fb: FormBuilder
     ) {}
 
-    ngOnInit(): void {
+  ngOnInit(): void {
+    this.route.data.subscribe(({ user }) => {
         this.route.data.subscribe(({ user }) => {
             this.updateForm(user);
-        });
-        this.userService.authorities().subscribe((authorities) => {
-            this.authorities = authorities;
-        });
-    }
+    });
+    this.userService.authorities().subscribe(authorities => this.authorities = authorities);
+  }
 
-    previousState(): void {
-        window.history.back();
-    }
+  previousState(): void {
+    window.history.back();
+  }
 
-    save(): void {
-        this.isSaving = true;
+  save(): void {
+    this.isSaving = true;
         const user = this.editForm.value
         if (user.id !== null) {
             this.userService.update(user).subscribe(() => this.onSaveSuccess(), () => this.onSaveError());
-        } else {
-            <%_ if (!enableTranslation) { _%>
-            this.user.langKey = 'en';
-            <%_ } _%>
+    } else {
+      <%_ if (!enableTranslation) { _%>
+      this.user.langKey = 'en';
+      <%_ } _%>
             this.userService.create(user).subscribe(() => this.onSaveSuccess(), () => this.onSaveError());
-        }
     }
+  }
 
     private updateForm(user: User | null): void {
         if (user) {
@@ -89,13 +88,14 @@ export class UserManagementUpdateComponent implements OnInit {
             });
         }
     }
+  }
 
-    private onSaveSuccess(): void {
-        this.isSaving = false;
-        this.previousState();
-    }
+  private onSaveSuccess(): void {
+    this.isSaving = false;
+    this.previousState();
+  }
 
-    private onSaveError(): void {
-        this.isSaving = false;
-    }
+  private onSaveError(): void {
+    this.isSaving = false;
+  }
 }

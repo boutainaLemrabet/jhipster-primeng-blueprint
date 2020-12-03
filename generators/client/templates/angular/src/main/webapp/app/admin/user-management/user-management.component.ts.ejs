@@ -47,7 +47,7 @@ import { TranslateService } from '@ngx-translate/core';
     templateUrl: './user-management.component.html'
 })
 export class UserManagementComponent implements OnInit, OnDestroy {
-    currentAccount: Account | null = null;
+  currentAccount: Account | null = null;
     users: IUser[] | null = null;
     eventSubscriber?: Subscription;
 
@@ -60,7 +60,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     @ViewChild('userTable', { static: true })
     userTable!: Table;
 
-    constructor(
+  constructor(
         protected userService: UserService,
         protected messageService: MessageService,
         protected accountService: AccountService,
@@ -100,7 +100,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
                     this.loading = false;
                 }
             );
-    }
+  }
 
     ngOnDestroy(): void {
         if (this.eventSubscriber) {
@@ -112,7 +112,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     onLazyLoadEvent(event: LazyLoadEvent): void {
         const queryParams = lazyLoadEventToRouterQueryParams(event, this.filtersDetails);
         this.router.navigate(['/admin/user-management'], { queryParams });
-    }
+  }
 
     filter(value: any, field: string): void {
         this.userTable.filter(value, field, computeFilterMatchMode(this.filtersDetails[field]));
@@ -130,7 +130,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
                     });
                 });
             }
-        });
+    });
     }
 
     trackId(index: number, item: IUser): string {

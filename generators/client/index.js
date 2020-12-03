@@ -12,11 +12,11 @@ module.exports = class extends ClientGenerator {
         if (!jhContext) {
             this.error(`This is a JHipster blueprint and should be used only like ${chalk.yellow('jhipster --blueprint helloworld')}`);
         }
-
-        this.configOptions = jhContext.configOptions || {};
-
-        // This sets up options for this sub generator and is being reused from JHipster
-        jhContext.setupClientOptions(this, jhContext);
+        //
+        // this.configOptions = jhContext.configOptions || {};
+        //
+        // // This sets up options for this sub generator and is being reused from JHipster
+        // jhContext.setupClientOptions(this, jhContext);
     }
 
     get initializing() {
@@ -84,6 +84,18 @@ module.exports = class extends ClientGenerator {
         return super._configuring();
     }
 
+    get composing() {
+        return super._composing();
+    }
+
+    get loading() {
+        return super._loading();
+    }
+
+    get preparing() {
+        return super._preparing();
+    }
+
     get default() {
         // Here we are not overriding this phase and hence its being handled by JHipster
         return super._default();
@@ -98,6 +110,10 @@ module.exports = class extends ClientGenerator {
             }
         };
         return Object.assign(phaseFromJHipster, customPhaseSteps);
+    }
+
+    get postWriting() {
+        return super._postWriting();
     }
 
     get install() {

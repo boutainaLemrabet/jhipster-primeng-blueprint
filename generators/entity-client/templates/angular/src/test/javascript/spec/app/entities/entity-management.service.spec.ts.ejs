@@ -17,10 +17,11 @@
  limitations under the License.
 -%>
 <%_
-const tsKeyId = pkData.map(pk => pk.field.tsTestValue).join(', ');
+const tsKeyId = primaryKey.ids.map(pk => pk.field.tsTestValue).join(', ');
 const enumImports = generateEntityClientEnumImports(fields);
+const testEntity = generateTestEntity(primaryKey);
 _%>
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 <%_ if (fieldsContainLocalDate) { _%>
 import { DATE_FORMAT } from 'app/shared/constants/input.constants';
@@ -34,7 +35,6 @@ import { <%- importedType %> } from '<%- importedPath %>';
 
 describe('Service Tests', () => {
     describe('<%= entityAngularName %> Service', () => {
-        let injector: TestBed;
         let service: <%= entityAngularName %>Service;
         let httpMock: HttpTestingController;
         let elemDefault: I<%= entityAngularName %>;
@@ -54,9 +54,8 @@ describe('Service Tests', () => {
 <%_ } _%>
             });
             expectedResult = null;
-            injector = getTestBed();
-            service = injector.get(<%= entityAngularName %>Service);
-            httpMock = injector.get(HttpTestingController);
+            service = TestBed.inject(<%= entityAngularName %>Service);
+            httpMock = TestBed.inject(HttpTestingController);
             <%_ if (fieldsContainDate) { _%>
             currentDate = new Date();
                 <%_ if (fieldsContainLocalDate) { _%>
@@ -91,7 +90,7 @@ describe('Service Tests', () => {
         <%_ if (!readOnly) { _%>
             it('should create a <%= entityAngularName %>', () => {
                 const returnedFromService = Object.assign({
-                    <%_ if (pkType === 'String' || pkType === 'UUID') { _%>
+                    <%_ if (tsKeyType === 'string') { _%>
                     id: 'ID',
                     <%_ } else { _%>
                     id: 0,

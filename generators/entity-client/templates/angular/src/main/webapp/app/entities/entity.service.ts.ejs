@@ -17,7 +17,6 @@
  limitations under the License.
 -%>
 <%_
-const tsKeyType = getTypescriptKeyType(getPkTypeBasedOnDBAndAssociation(authenticationType, databaseType, relationships));
 let searchType = 'Search';
 if (pagination === 'pagination' || pagination === 'infinite-scroll') {
     searchType = 'SearchWithPagination';
@@ -30,11 +29,14 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
     <%_ if (fieldsContainLocalDate) { _%>
 import { DatePipe } from '@angular/common';
-import { DATE_FORMAT } from 'app/shared/constants/input.constants';
+import { DATE_FORMAT } from 'app/core/config/input.constants';
     <%_ } _%>
 <%_ } _%>
 import { SERVER_API_URL } from 'app/app.constants';
-import { createRequestOption<% if (searchEngine === 'elasticsearch') { %>, <%= searchType %><% } %> } from 'app/shared/util/request-util';
+import { createRequestOption } from 'app/core/request/request-util';
+<%_ if (searchEngine !== false) { _%>
+import { <%= searchType %> } from 'app/core/request/request.model';
+<%_ } _%>
 import { I<%= entityAngularName %> } from 'app/shared/model/<%= entityModelFileName %>.model';
 
 type EntityResponseType = HttpResponse<I<%= entityAngularName %>>;
@@ -43,7 +45,7 @@ type EntityArrayResponseType = HttpResponse<I<%= entityAngularName %>[]>;
 @Injectable({ providedIn: 'root' })
 export class <%= entityAngularName %>Service {
     public resourceUrl = SERVER_API_URL + '<% if (applicationType === 'gateway' && locals.microserviceName) { %>services/<%= microserviceName.toLowerCase() %>/<% } %>api/<%= entityApiUrl %>';
-    <%_ if (searchEngine === 'elasticsearch') { _%>
+    <%_ if (searchEngine !== false) { _%>
     public resourceSearchUrl = SERVER_API_URL + '<% if (applicationType === 'gateway' && locals.microserviceName) { %>services/<%= microserviceName.toLowerCase() %>/<% } %>api/_search/<%= entityApiUrl %>';
     <%_ } _%>
 
@@ -71,8 +73,8 @@ export class <%= entityAngularName %>Service {
     }
     <%_ } _%>
 
-    find(<%= pkData.map(pk => `${pk.name}: ${pk.tsType}`).join(', ') %>): Observable<EntityResponseType> {
-        return this.http.get<I<%= entityAngularName %>>(`${this.resourceUrl}/<%-pkData.length === 1 ? '${'+pkData[0].name+'}' : pkData.map(pk => pk.name+'=${'+pk.name+'}').join(';')%>`, { observe: 'response' })
+    find(<%= entity.primaryKey.ids.map(pk => `${pk.name}: ${this.getTypescriptKeyType(pk.field.fieldType)}`).join(', ') %>): Observable<EntityResponseType> {
+        return this.http.get<I<%= entityAngularName %>>(`${this.resourceUrl}/<%-entity.primaryKey.ids.length === 1 ? '${'+entity.primaryKey.ids[0].name+'}' : entity.primaryKey.ids.map(pk => pk.name+'=${'+pk.name+'}').join(';')%>`, { observe: 'response' })
             <% if (fieldsContainDate) { %>.pipe(map((res: EntityResponseType) => this.convertDateFromServer(res)))<% } %>;
     }
 
@@ -83,12 +85,12 @@ export class <%= entityAngularName %>Service {
     }
 
     <%_ if (!readOnly) { _%>
-    delete(<%= pkData.map(pk => `${pk.name}: ${pk.tsType}`).join(', ') %>): Observable<HttpResponse<any>> {
-        return this.http.delete<any>(`${this.resourceUrl}/<%-pkData.length === 1 ? '${'+pkData[0].name+'}' : pkData.map(pk => pk.name+'=${'+pk.name+'}').join(';')%>`, { observe: 'response' });
+    delete(<%= entity.primaryKey.ids.map(pk => `${pk.name}: ${this.getTypescriptKeyType(pk.field.fieldType)}`).join(', ') %>): Observable<HttpResponse<{}>> {
+        return this.http.delete(`${this.resourceUrl}/<%-entity.primaryKey.ids.length === 1 ? '${'+entity.primaryKey.ids[0].name+'}' : entity.primaryKey.ids.map(pk => pk.name+'=${'+pk.name+'}').join(';')%>`, { observe: 'response' });
     }
     <%_ } _%>
 
-    <%_ if (searchEngine === 'elasticsearch') { _%>
+    <%_ if (searchEngine !== false) { _%>
     search(req: <%= searchType %>): Observable<EntityArrayResponseType> {
         const options = createRequestOption(req);
         return this.http.get<I<%= entityAngularName %>[]>(this.resourceSearchUrl, { params: options, observe: 'response' })
@@ -101,10 +103,10 @@ export class <%= entityAngularName %>Service {
         const copy: I<%= entityAngularName %> = Object.assign({}, <%= entityInstance %>, {
     <%_ for (idx in fields) { _%>
         <%_ if ( ['Instant', 'ZonedDateTime'].includes(fields[idx].fieldType) ) { _%>
-        <%= fields[idx].fieldName %>: <%= entityInstance %>.<%= fields[idx].fieldName %> != null ? <%= entityInstance %>.<%= fields[idx].fieldName %>.toISOString() : undefined,
+        <%= fields[idx].fieldName %>: <%= entityInstance %>.<%= fields[idx].fieldName %>?.isValid() ? <%= entityInstance %>.<%= fields[idx].fieldName %>.toJSON() : undefined,
         <%_ } _%>
         <%_ if ( fields[idx].fieldType === 'LocalDate' ) { _%>
-        <%= fields[idx].fieldName %>: <%= entityInstance %>.<%= fields[idx].fieldName %> != null ? this.datePipe.transform(<%= entityInstance %>.<%= fields[idx].fieldName %>, DATE_FORMAT) : undefined,
+        <%= fields[idx].fieldName %>: <%= entityInstance %>.<%= fields[idx].fieldName %>?.isValid() ? <%= entityInstance %>.<%= fields[idx].fieldName %>.format(DATE_FORMAT) : undefined,
         <%_ } _%>
     <%_ } _%>
         });

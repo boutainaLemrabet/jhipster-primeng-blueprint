@@ -19,18 +19,17 @@
 import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
-import { <%= angularXAppName %>SharedModule } from 'app/shared/shared.module';
+import { SharedModule } from 'app/shared/shared.module';
 import { <%= entityAngularName %>Component } from './<%= entityFileName %>.component';
 import { <%= entityAngularName %>DetailComponent } from './<%= entityFileName %>-detail.component';
 <%_ if (!readOnly) { _%>
 import { <%= entityAngularName %>UpdateComponent } from './<%= entityFileName %>-update.component';
 <%_ } _%>
-import { <%= entityInstance %>Route } from './<%= entityFileName %>.route';
 
 @NgModule({
     imports: [
-        <%= angularXAppName %>SharedModule,
-        RouterModule.forChild(<%= entityInstance %>Route)
+        SharedModule,
+        RouterModule,
     ],
     declarations: [
         <%= entityAngularName %>Component,
@@ -39,6 +38,13 @@ import { <%= entityInstance %>Route } from './<%= entityFileName %>.route';
         <%= entityAngularName %>UpdateComponent,
         <%_ } %>
     ],
+    exports: [
+        <%= entityAngularName %>DetailComponent,
+        <%_ if (!readOnly) { _%>
+        <%= entityAngularName %>UpdateComponent,
+        <%= entityAngularName %>DeleteDialogComponent,
+        <%_ } %>
+    ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
-export class <%= locals.microserviceName ? upperFirstCamelCase(locals.microserviceName) : angularXAppName %><%= entityAngularName %>Module {}
+export class <%= locals.microserviceName ? upperFirstCamelCase(locals.microserviceName) : '' %><%= entityAngularName %>Module {}
