@@ -17,18 +17,17 @@
  limitations under the License.
 -%>
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
-import { <%_ if (pagination !== 'no') { _%>HttpHeaders, <% } %>HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse, <%_ if (pagination !== 'no') { _%>HttpHeaders, <% } %>HttpResponse } from '@angular/common/http';
 <%_ if (pagination === 'pagination' || pagination === 'pager') { _%>
 import { ActivatedRoute, Router } from '@angular/router';
-import { combineLatest } from 'rxjs';
 <%_ } else if (searchEngine !== false) { _%>
 import { ActivatedRoute } from '@angular/router';
 <%_ } _%>
 import { Subscription } from 'rxjs';
 import { filter<% if (pagination !== 'no') { %>, tap, switchMap<% } else { %>, map<% } %> } from 'rxjs/operators';
 import { JhiEventManager<% if (fieldsContainBlob) { %>, JhiDataUtils<% } %> } from 'ng-jhipster';
-import { MessageService } from 'primeng/api';
-import { I<%= entityAngularName %> } from 'app/shared/model/<%= entityModelFileName %>.model';
+import { FilterMetadata, MessageService } from 'primeng/api';
+import { I<%= entityAngularName %> } from '../../shared/model/<%= entityModelFileName %>.model';
 <%_
 if ( jpaMetamodelFiltering) {
     const enumOptions = [];
@@ -38,32 +37,42 @@ if ( jpaMetamodelFiltering) {
         }
     });
     enumOptions.forEach(e => { _%>
-import { <%= e %>, <%= _.snakeCase(e).toUpperCase() %>_ARRAY } from 'app/shared/model/enumerations/<%= _.kebabCase(e) %>.model';
+import { <%= e %>, <%= _.snakeCase(e).toUpperCase() %>_ARRAY } from '../../shared/model/enumerations/<%= _.kebabCase(e) %>.model';
     <%_ }); _%>
 <%_ } _%>
 import { <%= entityAngularName %>Service } from './<%= entityFileName %>.service';
 <%_ if (pagination !== 'no') { %>
-import { ITEMS_PER_PAGE } from 'app/core/config/pagination.constants';
+import { ITEMS_PER_PAGE } from '../../core/config/pagination.constants';
 <%_ } _%>
-import { computeFilterMatchMode<% if (pagination !== 'no' || relationships.some(r => r.inList && r.pagination !== null)) { %>, lazyLoadEventToServerQueryParams<% } %><% if (pagination !== 'no') {%>, lazyLoadEventToRouterQueryParams, fillTableFromQueryParams<% } %> } from 'app/shared/util/request-util';
-import { ConfirmationService<%_ if (pagination !== 'no' || relationships.some(r => r.inList && r.pagination !== null)) { _%>, LazyLoadEvent<% } %> } from 'primeng/api';
+<%_ if (pagination !== 'no' || relationships.some(r => r.ownerSide && r.pagination !== null)) { _%>
+import { lazyLoadEventToServerQueryParams<% if (pagination !== 'no') {%>, lazyLoadEventToRouterQueryParams, fillTableFromQueryParams<% } %> } from '../../core/request/request-util';
+<%_ } _%>
+import { ConfirmationService<%_ if (pagination !== 'no' || relationships.some(r => r.ownerSide && r.pagination !== null)) { _%>, LazyLoadEvent<% } %> } from 'primeng/api';
 import { TranslateService } from '@ngx-translate/core';
+<%_ function generateRelationshipsImports(relationship) {
+    return `${relationship.otherEntity.relationships.filter(r => r.id).map(r => generateRelationshipsImports(r)).join('')}
+    import { I${relationship.otherEntityAngularName} } from '../../shared/model/${relationship.otherEntityFileName}.model';
+    import { ${relationship.otherEntityAngularName}Service } from '../../entities/${relationship.otherEntityFolderName}/${relationship.otherEntityFileName}.service';`;
+
+} _%>
 <%_ if(jpaMetamodelFiltering){ _%>
-    <%_ const alreadyImported = new Set() _%>
-    <%_ for (idx in relationships) { _%>
-        <%_ if (relationships[idx].inList) { _%>
-            <%_ relationships[idx].pkData.forEach(pk => { _%>
-                <%_ if(!alreadyImported.has(pk.entity.name)) { _%>
-                    <%_ alreadyImported.add(pk.entity.name); _%>
-                    <%_ if(pk.entity.name === 'User') { _%>
-import { IUser } from 'app/core/user/user.model';
-import { UserService } from 'app/core/user/user.service';
+    <%_ const alreadyImported = new Set()
+    alreadyImported.add(entity.name)%>
+    <%_ for (idx in relationships) {
+        const relationshipType = relationships[idx].relationshipType;
+        const ownerSide = relationships[idx].ownerSide;
+    if (relationshipType === 'many-to-one'
+            || (relationshipType === 'one-to-one' && ownerSide === true)
+            || (relationshipType === 'many-to-many' && ownerSide === true && pagination === 'no')) { _%>
+                <%_ if(!alreadyImported.has(relationships[idx].otherEntity.name)) { _%>
+                    <%_ alreadyImported.add(relationships[idx].otherEntity.name); _%>
+                    <%_ if(relationships[idx].otherEntity.name === 'User') { _%>
+import { IUser } from '../../core/user/user.model';
+import { UserService } from '../../core/user/user.service';
                     <%_ } else {_%>
-import { I<%= pk.entity.angularName %> } from 'app/shared/model/<%= pk.entity.modelName %>.model';
-import { <%= pk.entity.angularName%>Service } from 'app/entities/<%= pk.entity.path %>/<%= pk.entity.fileName %>.service';
+<%- generateRelationshipsImports(relationships[idx])-%>
                     <%_ } _%>
                 <%_ } _%>
-            <%_ }) _%>
         <%_ } _%>
     <%_ } _%>
 <%_ } _%>
@@ -71,17 +80,19 @@ import { Table } from 'primeng/table';
 <%_ if(jpaMetamodelFiltering && fields.some(f => ['LocalDate', 'Instant', 'ZonedDateTime'].includes(f.fieldType))){ _%>
 import { DatePipe } from '@angular/common';
 <%_ } _%>
-<%_ if (fieldsContainBlob) { _%>
-import { DataUtils } from 'app/core/util/data-util.service';
-<%_ } _%>
 
 @Component({
     selector: '<%= jhiPrefixDashed %>-<%= entityFileName %>',
     templateUrl: './<%= entityFileName %>.component.html'
 })
+
 export class <%= entityAngularName %>Component implements OnInit, OnDestroy {
     <%= entityInstancePlural %>?: I<%= entityAngularName %>[];
     eventSubscriber?: Subscription;
+<%_ function generateOptions(relationship) {
+        return `${relationship.relationshipName}Options: I${relationship.otherEntity.name}[] | null = null;
+        ${relationship.otherEntity.relationships.filter(r => r.id).map(r => generateOptions(r)).join('')}`;
+} _%>
 <%_ if (jpaMetamodelFiltering) {
     for (idx in fields) {
         if(['LocalDate', 'Instant', 'ZonedDateTime'].includes(fields[idx].fieldType)){ _%>
@@ -92,11 +103,13 @@ export class <%= entityAngularName %>Component implements OnInit, OnDestroy {
     <%= fields[idx].fieldName %>Options = <%= _.snakeCase(fields[idx].fieldType).toUpperCase() %>_ARRAY.map((s: <%=fields[idx].fieldType%>) => ({ label: s.toString(), value: s }));
         <%_ } _%>
     <%_ } _%>
-    <%_ for (idx in relationships) { _%>
-        <%_ if (relationships[idx].inList) { _%>
-            <%_ relationships[idx].pkData.forEach(pk => { _%>
-    <%= pk.formName %>Options: I<%= pk.entityName %>[] | null = null;
-            <%_ }) _%>
+    <%_ for (idx in relationships) {
+        const relationshipType = relationships[idx].relationshipType;
+        const ownerSide = relationships[idx].ownerSide;
+        if (relationshipType === 'many-to-one'
+            || (relationshipType === 'one-to-one' && ownerSide === true)
+            || (relationshipType === 'many-to-many' && ownerSide === true && pagination === 'no')) { _%>
+<%- generateOptions(relationships[idx]) -%>
         <%_ } _%>
     <%_ } %>
 <%_ } _%>
@@ -106,10 +119,12 @@ export class <%= entityAngularName %>Component implements OnInit, OnDestroy {
     loading!: boolean;
 
 <%_ } _%>
-    private filtersDetails: { [_: string]: { matchMode?: string; flatten?: (_: any) => string; unflatten?: (_: string) => any } } = {
+    private filtersDetails: { [_: string]: { matchMode?: string; flatten?: (_: string[]) => string; unflatten?: (_: string) => any } } = {
 <%_ for ( idx in fields ) {
     if (fields[idx].fieldIsEnum) { _%>
         <%= fields[idx].fieldName %>: {matchMode: 'in'},
+    <%_ } else if (fields[idx].fieldType === 'String') { _%>
+        <%= fields[idx].fieldName %>: {matchMode: 'contains'},
     <%_ } else if (['LocalDate', 'Instant', 'ZonedDateTime'].includes(fields[idx].fieldType)) { _%>
         <%= fields[idx].fieldName %>: {matchMode: 'between', flatten: a => a.filter((x: string) => x).join(','), unflatten: (a: string) => a.split(',') },
     <%_ } else if (fields[idx].fieldType === 'Boolean') { _%>
@@ -118,10 +133,14 @@ export class <%= entityAngularName %>Component implements OnInit, OnDestroy {
         <%= fields[idx].fieldName %>: {matchMode: 'equals', unflatten: (x: string) => +x},
     <%_ } _%>
 <%_ } _%>
-<%_ for ( idx in relationships ) { _%>
-    <%_ if (relationships[idx].inList) { _%>
-        <%_ relationships[idx].pkData.forEach(pk => { _%>
-        <%= relationships[idx].relationshipFieldName %><%= pk.nameCapitalized %>: {matchMode: 'in'<% if(['Integer', 'Long', 'Float', 'Double', 'BigDecimal', 'Duration'].includes(pk.fieldType)) { %>, flatten: a => a.join(','), unflatten: a => a.split(',').map(x => +x) <% } %>},
+<%_ for ( idx in relationships ) {
+    const relationshipType = relationships[idx].relationshipType;
+    const ownerSide = relationships[idx].ownerSide;
+    if (relationshipType === 'many-to-one'
+        || (relationshipType === 'one-to-one' && ownerSide === true)
+        || (relationshipType === 'many-to-many' && ownerSide === true && pagination === 'no')) { _%>
+        <%_ relationships[idx].otherEntity.primaryKey.ids.forEach(pk => { _%>
+        ['<%= relationships[idx].relationshipFieldName %>.<%= pk.nameDotted %>']: {matchMode: 'in'<% if(['Integer', 'Long', 'Float', 'Double', 'BigDecimal', 'Duration'].includes(pk.field.fieldType)) { %>, flatten: a => a.filter((x: string) => `${x}`).join(','), unflatten: (a: string) => a.split(',').map(x => +x) <% } %><% if(pk.field.fieldType === 'String') { %>, flatten: a => a.filter((x: string) => x).join(','), unflatten: (a: string) => a.split(',') <% } %>},
         <%_ }) _%>
     <%_ } _%>
 <%_ } _%>
@@ -132,16 +151,23 @@ export class <%= entityAngularName %>Component implements OnInit, OnDestroy {
 
     constructor(
         protected <%= entityInstance %>Service: <%= entityAngularName %>Service,
+<%_ function generateConstructorElements(relationship) {
+    return `protected ${_.lowerFirst(relationship.otherEntity.name)}Service: ${relationship.otherEntity.name}Service,
+    ${relationship.otherEntity.relationships.filter(r => r.id).map(r => generateConstructorElements(r)).join('')}`;
+}_%>
 <%_ if(jpaMetamodelFiltering){ _%>
-    <%_ const alreadyInConstructor = new Set() _%>
-    <%_ for (idx in relationships) { _%>
-        <%_ if (relationships[idx].inList) { _%>
-            <%_ relationships[idx].pkData.forEach(pk => { _%>
-                <%_ if(!alreadyInConstructor.has(pk.entity.name)) { _%>
-                    <%_ alreadyInConstructor.add(pk.entity.name); _%>
-        protected <%= _.lowerFirst(pk.entity.name) %>Service: <%= pk.entity.angularName%>Service,
+    <%_ const alreadyInConstructor = new Set()
+    alreadyInConstructor.add(entity.name)_%>
+    <%_ for (idx in relationships) {
+        const relationshipType = relationships[idx].relationshipType;
+        const ownerSide = relationships[idx].ownerSide;
+    if (relationshipType === 'many-to-one'
+            || (relationshipType === 'one-to-one' && ownerSide === true)
+            || (relationshipType === 'many-to-many' && ownerSide === true && pagination === 'no')) { _%>
+                <%_ if(!alreadyInConstructor.has(relationships[idx].otherEntity.name)) { _%>
+                    <%_ alreadyInConstructor.add(relationships[idx].otherEntity.name); _%>
+        <%- generateConstructorElements(relationships[idx]) -%>
                 <%_ } _%>
-            <%_ }) _%>
         <%_ } _%>
     <%_ } _%>
 <%_ } _%>
@@ -178,9 +204,9 @@ export class <%= entityAngularName %>Component implements OnInit, OnDestroy {
 <%_ } _%>
 <%_ if(jpaMetamodelFiltering){ _%>
     <%_ for (idx in relationships) { _%>
-        <%_ if (relationships[idx].inList && relationships[idx].pagination == 'no') { _%>
-            <%_ relationships[idx].pkData.forEach(pk => { _%>
-        this.loadAll<%= _.upperFirst(pluralize(pk.formName)) %>();
+        <%_ if (relationships[idx].ownerSide && relationships[idx].pagination == 'no') { _%>
+            <%_ relationships[idx].otherEntity.primaryKey.ids.forEach(pk => { _%>
+        this.loadAll<%= _.upperFirst(pluralize(pk.entity.name)) %>();
             <%_ }) _%>
         <%_ } _%>
     <%_ } _%>
@@ -191,8 +217,7 @@ export class <%= entityAngularName %>Component implements OnInit, OnDestroy {
             tap(queryParams => fillTableFromQueryParams(this.<%= entityInstance %>Table, queryParams, this.filtersDetails)),
     <%_ for ( idx in fields ) {
         if (['LocalDate', 'Instant', 'ZonedDateTime'].includes(fields[idx].fieldType)) { _%>
-            tap(() => this.<%= fields[idx].fieldName %>Range = this.<%= entityInstance %>Table.filters.<%= fields[idx].fieldName %> && this.<%= entityInstance %>Table.filters.<%= fields[idx].fieldName %>.value &&
-                    this.<%= entityInstance %>Table.filters.<%= fields[idx].fieldName %>.value.map((x: string) => new Date(x))),
+            tap(() => (this.filters.<%= fields[idx].fieldName %>?.value?.map((x: string) => new Date(x)) as Date[])),
         <%_ } _%>
     <%_ } _%>
             tap(() => this.loading = true),
@@ -219,6 +244,10 @@ export class <%= entityAngularName %>Component implements OnInit, OnDestroy {
             }
         );
 <%_ } _%>
+    }
+
+    get filters(): { [s: string]: FilterMetadata } {
+        return this.<%= entityInstance %>Table.filters as { [s: string]: FilterMetadata };
     }
 
     ngOnDestroy(): void {
@@ -264,16 +293,17 @@ export class <%= entityAngularName %>Component implements OnInit, OnDestroy {
     <%_ } _%>
 
     filter(value: any, field: string): void {
-        this.<%= entityInstance %>Table.filter(value, field, computeFilterMatchMode(this.filtersDetails[field]));
+        this.<%= entityInstance %>Table.filter(value, field, this.filtersDetails[field].matchMode!);
     }
 <%_ if (!readOnly) { _%>
 
-    delete(<%= pkData.map(pk => `${pk.name}: ${pk.tsType}`).join(', ') %>): void {
+    delete(<%= primaryKey.ids.map(pk => `${pk.name}: ${this.getTypescriptKeyType(pk.field.fieldType)}`).join(', ') %>): void {
         this.confirmationService.confirm({
             header: this.translateService.instant('entity.delete.title'),
-            message: this.translateService.instant('primengtestApp.<%= entityInstance %>.delete.question', { id<%- isAutoIncrement ? '' : ': ' + pkData.map(pk => pk.name).join(" + ',' + ") %> }),
+            message: this.translateService.instant('<%= i18nKeyPrefix %>.delete.question',
+    { id<%- (primaryKey.ids.length === 1 && primaryKey.ids[0].name === 'id') ? '' : ': `' + primaryKey.ids.map(pk => '${'+pk.name+'}').join(" , ") + '`' %> }),
             accept: () => {
-                this.<%= entityInstance %>Service.delete(<%= pkData.map(pk => `${pk.name}`).join(', ') %>).subscribe(() => {
+                this.<%= entityInstance %>Service.delete(<%= primaryKey.ids.map(pk => `${pk.name}`).join(', ') %>).subscribe(() => {
                     this.eventManager.broadcast({
                         name: '<%= entityInstance %>ListModification',
                         content: 'Deleted an <%= entityInstance %>'
@@ -283,37 +313,45 @@ export class <%= entityAngularName %>Component implements OnInit, OnDestroy {
         });
     }
 <%_ } _%>
-    <%_ if(jpaMetamodelFiltering){ _%>
-        <%_ for (idx in relationships) { _%>
-            <%_ if (relationships[idx].inList) { _%>
-                <%_ relationships[idx].pkData.forEach(pk => { _%>
-                    <%_ if (relationships[idx].pagination == 'no') { _%>
+    <%_ if(jpaMetamodelFiltering) { _%>
+    <%_ function generateOnLazyLoadEvent(relationship)  {
+        return `on${_.upperFirst(relationship.relationshipName)}LazyLoadEvent(event: LazyLoadEvent): void {
+        this.${_.lowerFirst(relationship.otherEntity.name)}Service.query(lazyLoadEventToServerQueryParams(event, 'globalFilter'))
+            .subscribe(res => this.${relationship.relationshipName}Options = res.body);
+        }
 
-    loadAll<%= _.upperFirst(pluralize(pk.formName)) %>(): void {
-        this.<%= _.lowerFirst(pk.entity.name) %>Service.query()
-            .subscribe(res => this.<%= pk.formName %>Options = res.body);
-    }
-                    <%_ } else {_%>
+        ${relationship.otherEntity.relationships.filter(r => r.id).map(r => generateOnLazyLoadEvent(r)).join('')}`;
+    }_%>
+        <%_ for (idx in relationships) {
+            const relationshipType = relationships[idx].relationshipType;
+            const ownerSide = relationships[idx].ownerSide;
+            if (relationshipType === 'many-to-one'
+                    || (relationshipType === 'one-to-one' && ownerSide === true)
+                    || (relationshipType === 'many-to-many' && ownerSide === true && pagination === 'no')) { _%>
+                <%_ if (relationships[idx].pagination == 'no') { _%>
 
-    on<%= _.upperFirst(pk.formName) %>LazyLoadEvent(event: LazyLoadEvent): void {
-        this.<%= _.lowerFirst(pk.entity.name) %>Service.query(lazyLoadEventToServerQueryParams(event, '<%= pk.otherEntityField %>.contains'))
-            .subscribe(res => this.<%= pk.formName %>Options = res.body);
-    }
-                    <%_ } _%>
-                <%_ }) _%>
+        loadAll<%= _.upperFirst(pluralize(relationships[idx].otherEntity.name)) %>(): void {
+            this.<%= _.lowerFirst(relationships[idx].otherEntity.name) %>Service.query()
+                .subscribe(res => this.<%= relationships[idx].otherEntity.name %>Options = res.body);
+        }
+                <%_ } else {_%>
+
+        <%- generateOnLazyLoadEvent(relationships[idx]) -%>
+                 <%_ } _%>
             <%_ } _%>
         <%_ } _%>
     <%_ } _%>
 
     trackId(index: number, item: I<%= entityAngularName %>): <%= tsKeyType %> {
-    <%_ if (primaryKey.ids.length === 1) {
-        // splitting cases to avoid converting number keys to string and having useless `
-    _%>
-    return item.<%= primaryKey.name %>!;
-    <%_ } else { _%>
+<%_ if (primaryKey.ids.length === 1) {
+    // splitting cases to avoid converting number keys to string and having useless `
+_%>
+        return item.<%= primaryKey.name %>!;
+<%_ } else { _%>
         return `<%- entity.primaryKey.ids.map(pk => `\${item.${pk.nameDottedAsserted}}`).join(",")%>`;
-    <%_ } _%>
+<%_ } _%>
     }
+
     <%_ if (fieldsContainBlob) { _%>
 
     byteSize(field: string): string {
@@ -321,7 +359,7 @@ export class <%= entityAngularName %>Component implements OnInit, OnDestroy {
     }
 
     openFile(contentType = '', field: string): void {
-        return this.dataUtils.openFile(contentType, file);
+        return this.dataUtils.openFile(contentType, field);
     }
     <%_ } _%>
 
@@ -331,6 +369,12 @@ export class <%= entityAngularName %>Component implements OnInit, OnDestroy {
         eventCallBack = "this.router.navigate(['/" + entityUrl + "'], {queryParams: {r: Date.now()}})";
     }
     _%>
+
+    registerChangeIn<%= entityClassPlural %>(): void {
+        this.eventSubscriber = this.eventManager.subscribe('<%= entityInstance %>ListModification', () =>
+            <%- eventCallBack %>
+        );
+    }
 
     <%_ if (pagination !== 'no') { _%>
         <%_ if (pagination === 'pagination' || pagination === 'pager') { _%>
@@ -358,7 +402,7 @@ export class <%= entityAngularName %>Component implements OnInit, OnDestroy {
     <%_ if(pagination !== 'no' && jpaMetamodelFiltering && fields.some(f => ['LocalDate', 'Instant', 'ZonedDateTime'].includes(f.fieldType) )){ _%>
 
     onDateSelect(dateRange: Date[] | undefined, column: string, time = false): void {
-        const dateToString =  time ? ((x: Date) => x && x.toISOString()) : ((x: Date) => x && this.datePipe.transform(x, 'yyyy-MM-dd'));
+        const dateToString =  time ? ((x: Date) => x.toISOString()) : ((x: Date) => this.datePipe.transform(x, 'yyyy-MM-dd'));
         if (dateRange) {
             this.filter(dateRange.map(dateToString), column);
         } else {

@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
-import { LANGUAGES } from 'app/core/language/language.constants';
+import { LANGUAGES } from 'app/core/config/language.constants';
 import { User } from 'app/core/user/user.model';
 import { UserService } from 'app/core/user/user.service';
 
@@ -23,18 +23,20 @@ export class UserManagementUpdateComponent implements OnInit {
     email: ['', [Validators.minLength(5), Validators.maxLength(254), Validators.email]],
     activated: [],
     langKey: [],
-    authorities: []
+    authorities: [],
   });
 
-  constructor(private userService: UserService, private route: ActivatedRoute, private fb: FormBuilder) {}
+    constructor(
+        private userService: UserService,
+        private route: ActivatedRoute,
+        private fb: FormBuilder
+    ) {}
 
   ngOnInit(): void {
     this.route.data.subscribe(({ user }) => {
       this.updateForm(user);
     });
-    this.userService.authorities().subscribe(authorities => {
-      this.authorities = authorities;
-    });
+    this.userService.authorities().subscribe(authorities => this.authorities = authorities);
   }
 
   previousState(): void {
@@ -43,27 +45,22 @@ export class UserManagementUpdateComponent implements OnInit {
 
   save(): void {
     this.isSaving = true;
-    const user = this.editForm.value;
-    if (user.id !== null) {
-      this.userService.update(user).subscribe(
-        () => this.onSaveSuccess(),
-        () => this.onSaveError()
-      );
+        const user = this.editForm.value
+        if (user.id !== null) {
+            this.userService.update(user).subscribe(() => this.onSaveSuccess(), () => this.onSaveError());
     } else {
-      this.userService.create(user).subscribe(
-        () => this.onSaveSuccess(),
-        () => this.onSaveError()
-      );
+            this.userService.create(user).subscribe(() => this.onSaveSuccess(), () => this.onSaveError());
     }
   }
 
-  private updateForm(user: User | null): void {
-    if (user) {
-      this.editForm.reset({ ...user });
-    } else {
-      this.editForm.reset({
-        activated: true
-      });
+    private updateForm(user: User | null): void {
+        if (user) {
+            this.editForm.reset({ ...user });
+        } else {
+            this.editForm.reset({
+                activated: true
+            });
+        }
     }
   }
 

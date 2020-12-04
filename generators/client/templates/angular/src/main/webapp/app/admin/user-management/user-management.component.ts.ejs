@@ -24,13 +24,12 @@ import { switchMap, tap, filter } from 'rxjs/operators';
 import { ActivatedRoute, Router } from '@angular/router';
 import { JhiEventManager } from 'ng-jhipster'
 import { ConfirmationService, LazyLoadEvent, MessageService } from 'primeng/api';
-import { ITEMS_PER_PAGE } from 'app/shared/constants/pagination.constants';
+import { ITEMS_PER_PAGE } from '../../core/config/pagination.constants';
 import {
-    computeFilterMatchMode,
     lazyLoadEventToServerQueryParams,
     lazyLoadEventToRouterQueryParams,
     fillTableFromQueryParams
-} from 'app/shared/util/request-util';
+} from 'app/core/request/request-util';
 <%_ } else { _%>
 import { JhiEventManager } from 'ng-jhipster';
 import { MessageService } from 'primeng/api';
@@ -115,7 +114,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
     filter(value: any, field: string): void {
-        this.userTable.filter(value, field, computeFilterMatchMode(this.filtersDetails[field]));
+        this.userTable.filter(value, field, this.filtersDetails[field].matchMode!);
     }
 
     delete(login: string): void {
@@ -138,7 +137,9 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     }
 
     registerChangeInUsers(): void {
-        this.eventSubscriber = this.eventManager.subscribe('userListModification', () => {});
+        this.eventSubscriber = this.eventManager.subscribe('userListModification', () => {
+        // do nothing
+        });
     }
 
     setActive(user: IUser, isActivated: boolean): void {

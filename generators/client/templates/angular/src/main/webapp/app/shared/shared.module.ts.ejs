@@ -22,11 +22,9 @@ import { SharedLibsModule } from './shared-libs.module';
 import { FindLanguageFromKeyPipe } from './find-language-from-key.pipe';
 import { TranslateDirective } from './translate.directive';
 <%_ } _%>
-<%_ if (authenticationType !== 'oauth2') { _%>
-import { LoginModalComponent } from './login/login.component';
-<%_ } _%>
-import { HasAnyAuthorityDirective } from './auth/has-any-authority.directive';
+import { HasAnyAuthorityDirective } from './has-any-authority.directive';
 import { PrimeNGCommonModule } from 'app/shared/primeng-common.module';
+import {SortDirective} from "app/shared/sort/sort.directive";
 @NgModule({
   imports: [SharedLibsModule],
   declarations: [
@@ -34,17 +32,8 @@ import { PrimeNGCommonModule } from 'app/shared/primeng-common.module';
     FindLanguageFromKeyPipe,
     TranslateDirective,
     <%_ } _%>
-        <%_ if (authenticationType !== 'oauth2') { _%>
-        LoginModalComponent,
-        <%_ } _%>
-        HasAnyAuthorityDirective,
-// jhipster
-        DurationPipe,
-        FormatMediumDatetimePipe,
-        FormatMediumDatePipe,
-        SortByDirective,
-        SortDirective,
-        ItemCountComponent
+    HasAnyAuthorityDirective,
+    SortDirective
   ],
   exports: [
     SharedLibsModule,
@@ -52,17 +41,9 @@ import { PrimeNGCommonModule } from 'app/shared/primeng-common.module';
     FindLanguageFromKeyPipe,
     TranslateDirective,
     <%_ } _%>
-        <%_ if (authenticationType !== 'oauth2') { _%>
-        LoginModalComponent,
-        <%_ } _%>
-        HasAnyAuthorityDirective,
-        PrimeNGCommonModule,
-        DurationPipe,
-        FormatMediumDatetimePipe,
-        FormatMediumDatePipe,
-        SortByDirective,
-        SortDirective,
-        ItemCountComponent
+    HasAnyAuthorityDirective,
+    PrimeNGCommonModule,
+    SortDirective
     ]
 })
 export class SharedModule {}

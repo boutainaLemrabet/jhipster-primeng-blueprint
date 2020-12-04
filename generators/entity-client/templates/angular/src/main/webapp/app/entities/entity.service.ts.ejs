@@ -29,15 +29,15 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
     <%_ if (fieldsContainLocalDate) { _%>
 import { DatePipe } from '@angular/common';
-import { DATE_FORMAT } from 'app/core/config/input.constants';
+import { DATE_FORMAT } from '../../core/config/input.constants';
     <%_ } _%>
 <%_ } _%>
-import { SERVER_API_URL } from 'app/app.constants';
-import { createRequestOption } from 'app/core/request/request-util';
+import { SERVER_API_URL } from '../../app.constants';
+import { createRequestOption } from '../../core/request/request-util';
 <%_ if (searchEngine !== false) { _%>
-import { <%= searchType %> } from 'app/core/request/request.model';
+import { <%= searchType %> } from '../../core/request/request.model';
 <%_ } _%>
-import { I<%= entityAngularName %> } from 'app/shared/model/<%= entityModelFileName %>.model';
+import { I<%= entityAngularName %> } from '../../shared/model/<%= entityModelFileName %>.model';
 
 type EntityResponseType = HttpResponse<I<%= entityAngularName %>>;
 type EntityArrayResponseType = HttpResponse<I<%= entityAngularName %>[]>;
@@ -103,10 +103,10 @@ export class <%= entityAngularName %>Service {
         const copy: I<%= entityAngularName %> = Object.assign({}, <%= entityInstance %>, {
     <%_ for (idx in fields) { _%>
         <%_ if ( ['Instant', 'ZonedDateTime'].includes(fields[idx].fieldType) ) { _%>
-        <%= fields[idx].fieldName %>: <%= entityInstance %>.<%= fields[idx].fieldName %>?.isValid() ? <%= entityInstance %>.<%= fields[idx].fieldName %>.toJSON() : undefined,
+        <%= fields[idx].fieldName %>: <%= entityInstance %>.<%= fields[idx].fieldName %> != null ? <%= entityInstance %>.<%= fields[idx].fieldName %>.toJSON() : undefined,
         <%_ } _%>
         <%_ if ( fields[idx].fieldType === 'LocalDate' ) { _%>
-        <%= fields[idx].fieldName %>: <%= entityInstance %>.<%= fields[idx].fieldName %>?.isValid() ? <%= entityInstance %>.<%= fields[idx].fieldName %>.format(DATE_FORMAT) : undefined,
+        <%= fields[idx].fieldName %>: <%= entityInstance %>.<%= fields[idx].fieldName %> != null ? this.datePipe.transform(<%= entityInstance %>.<%= fields[idx].fieldName %>, DATE_FORMAT) : undefined,
         <%_ } _%>
     <%_ } _%>
         });

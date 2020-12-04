@@ -19,6 +19,17 @@
 <%_
 const tsKeyId = generateTestEntityId(primaryKey);
 const testEntity = generateTestEntity(primaryKey);
+let datePipe = false;
+if (jpaMetamodelFiltering && fields.some(f => ['LocalDate', 'Instant', 'ZonedDateTime'].includes(f.fieldType))) {
+    datePipe = true;
+} else if (jpaMetamodelFiltering) {
+    for (idx in relationships) {
+        if(relationships[idx].otherEntity.fields.some(f => ['LocalDate', 'Instant', 'ZonedDateTime'].includes(f.fieldType))) {
+            datePipe = true;
+            break;
+        }
+    }
+}
 _%>
 jest.mock('@angular/router');
 
@@ -27,7 +38,11 @@ import { HttpResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { FormBuilder } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { MessageService } from 'primeng/api';
 import { of } from 'rxjs';
+<%_ if (datePipe) { _%>
+import { DatePipe } from '@angular/common';
+<%_ } _%>
 
 import { <%= entityAngularName %>UpdateComponent } from 'app/entities/<%= entityFolderName %>/<%= entityFileName %>-update.component';
 import { <%= entityAngularName %>Service } from 'app/entities/<%= entityFolderName %>/<%= entityFileName %>.service';
@@ -42,7 +57,14 @@ describe('Component Tests', () => {
             TestBed.configureTestingModule({
                 imports: [HttpClientTestingModule],
                 declarations: [<%= entityAngularName %>UpdateComponent],
-                providers: [FormBuilder, ActivatedRoute]
+                providers: [
+                    FormBuilder,
+                    ActivatedRoute,
+                    MessageService,
+                    <%_ if (datePipe) { _%>
+                    DatePipe,
+                    <%_ } _%>
+                ]
             })
             .overrideTemplate(<%= entityAngularName %>UpdateComponent, '')
             .compileComponents();

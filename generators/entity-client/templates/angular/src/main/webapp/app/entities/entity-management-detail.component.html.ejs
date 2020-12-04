@@ -19,7 +19,7 @@
 <div class="row justify-content-center">
     <div class="col-8">
         <div *ngIf="<%= entityInstance %>">
-            <h2 data-cy="<%= entityInstance %>DetailsHeading"><span <%= jhiPrefix %>Translate="<%= i18nKeyPrefix %>.detail.title"><%= entityClassHumanized %></span> {{ <%= entityInstance %>.id }}</h2>
+            <h2 data-cy="<%= entityInstance %>DetailsHeading"><span <%= jhiPrefix %>Translate="<%= i18nKeyPrefix %>.detail.title"><%= entityClassHumanized %></span> <%= primaryKey.ids.map(pk => `{{${entityInstance}.${pk.nameDottedAsserted}}}`).join(' / ') %></h2>
 
             <hr>
             <dl class="row-md jh-entity-details">
@@ -48,9 +48,9 @@
                     <%_ } else if (['Duration'].includes(fieldType)) { _%>
                         {{ <%= entityInstance %>.<%= fieldName %> | duration }} ({{<%= entityInstance %>.<%= fieldName %> }})
                     <%_ } else if (['Instant', 'ZonedDateTime'].includes(fieldType)) { _%>
-                    {{ <%= entityInstance %>.<%= fieldName %> | formatMediumDatetime }}
+                    {{ <%= entityInstance %>.<%= fieldName %> | date:'medium' }}
                     <%_ } else if (fieldType === 'LocalDate') { _%>
-                    {{ <%= entityInstance %>.<%= fieldName %> | formatMediumDate }}
+                    {{ <%= entityInstance %>.<%= fieldName %> | date:'mediumDate' }}
                     <%_ } else { _%>
                     <span>{{ <%= entityInstance %>.<%= fieldName %> }}</span>
                     <%_ } _%>
@@ -84,7 +84,7 @@
                     </span>
                         <%_ } else { _%>
                     <div *ngIf="<%= entityInstance + '.' + relationshipFieldName %>">
-                        <%- routerLink %>><%- label %>
+                        <%- label %>
                     </div>
                         <%_ } _%>
                     <%_ } else { _%>
@@ -95,16 +95,6 @@
                         <%_ } else { _%>
                     <div *ngIf="<%= entityInstance + '.' + relationshipFieldName %>">
                         <a <%- routerLink %>><%- label %></a>
-                    </div>
-                            <%_ } else { _%>
-                    <div *ngIf="<%-  relationships[idx].primaryKey.ids.map(pk => entityInstance + '.' + relationshipFieldName + pk.nameCapitalized).join(' && ') %>">
-                        <a [routerLink]="['/<%= otherEntityStateName %>', <%- relationships[idx].primaryKey.ids.length === 1 ? `${entityInstance}.${relationshipFieldName}${relationships[idx].primaryKey.ids[0].nameCapitalized}` : '{ '+ relationships[idx].primaryKey.ids.map(pk => `${pk.name}: ${entityInstance}.${relationshipFieldName}${pk.nameCapitalized}`).join(', ') + ' }' _%>, 'view']">
-                            <%_ if(relationships[idx].primaryKey.ids.length === 1) { _%>
-                            {{ <%= entityInstance + "." + relationshipFieldName + otherEntityFieldCapitalized %> }}
-                            <%_ } else { _%>
-                            {{'<%= i18nKeyPrefix %>.<%= relationshipName %>' | translate}}
-                            <%_ } _%>
-                        </a>
                     </div>
                         <%_ } _%>
                     <%_ } _%>

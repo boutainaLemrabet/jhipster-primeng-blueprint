@@ -3,9 +3,9 @@ import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 <%_ if (enableTranslation) { _%>
 import { TranslateModule } from '@ngx-translate/core';
 <%_ } _%>
-import { <%= angularXAppName %>TestModule } from '../../../test.module';
 import { AlertErrorService } from 'app/shared/alert/alert-error.service';
 import { MessageService } from 'primeng/api';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('Component Tests', () => {
     describe('Alert Error Component', () => {
@@ -14,7 +14,7 @@ describe('Component Tests', () => {
 
         beforeEach(() => {
             TestBed.configureTestingModule({
-                imports: [<%= angularXAppName %>TestModule<% if (enableTranslation) { %>, TranslateModule.forRoot()<% } %>],
+                imports: [HttpClientTestingModule<% if (enableTranslation) { %>, TranslateModule.forRoot()<% } %>],
                 providers: [AlertErrorService, MessageService]
             })
             service = TestBed.get(AlertErrorService);

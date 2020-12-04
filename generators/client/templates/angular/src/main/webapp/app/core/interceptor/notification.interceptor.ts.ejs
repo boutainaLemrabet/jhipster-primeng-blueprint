@@ -16,49 +16,47 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
+import { MessageService } from 'primeng/api';
+<%_ if (enableTranslation) { _%>
+import { TranslateService } from '@ngx-translate/core';
+<%_ } _%>
 import { HttpInterceptor, HttpRequest, HttpResponse, HttpHandler, HttpEvent } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
-import { AlertService } from 'app/core/util/alert.service';
-
 @Injectable()
 export class NotificationInterceptor implements HttpInterceptor {
-  constructor(private alertService: AlertService) {}
+constructor(private messageService: MessageService<% if (enableTranslation) { %>, private translateService: TranslateService<% } %>) {}
 
-  intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    return next.handle(request).pipe(
-      tap((event: HttpEvent<any>) => {
-        if (event instanceof HttpResponse) {
-          let alert: string | null = null;
-          <%_ if (enableTranslation) { _%>
-          let alertParams: string | null = null;
-          <%_ } _%>
+intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    return next.handle(request).pipe(tap((event: HttpEvent<any>) => {
+      if (event instanceof HttpResponse) {
+        let alert: string | null = null;
+      <%_ if (enableTranslation) { _%>
+        let alertParams: string | null = null;
+      <%_ } _%>
 
-          for (const headerKey of event.headers.keys()) {
-            if (headerKey.toLowerCase().endsWith('app-alert')) {
-              alert = event.headers.get(headerKey);
-            <%_ if (enableTranslation) { _%>
-            } else if (headerKey.toLowerCase().endsWith('app-params')) {
-              alertParams = decodeURIComponent(event.headers.get(headerKey)!.replace(/\+/g, ' '));
-            <%_ } _%>
-            }
-          }
+      event.headers.keys().forEach((entry) => {
+      if (entry.toLowerCase().endsWith('app-alert')) {
+        alert = event.headers.get(entry);
+      <%_ if (enableTranslation) { _%>
+      } else if (entry.toLowerCase().endsWith('app-params')) {
+        alertParams = decodeURIComponent(event.headers.get(entry)!.replace(/\+/g, ' '));
+      <%_ } _%>
+      }
+    });
 
-          if (alert) {
-            this.alertService.addAlert({
-              type: 'success',
-              <%_ if (enableTranslation) { _%>
-              translationKey: alert,
-              translationParams: { param: alertParams },
-              <%_ } else { _%>
-              message: alert,
-              <%_ } _%>
-            });
-          }
-        }
-      })
-    );
-  }
+    if (alert) {
+      if (typeof alert === 'string') {
+      <%_ if (enableTranslation) { _%>
+        this.messageService.add({ severity: 'success', summary: this.translateService.instant(alert, { param: alertParams }) });
+      <%_ } else { _%>
+        this.messageService.add({severity:'success', summary: alert});
+      <%_ } _%>
+      }
+    }
+   }
+  }));
+ }
 }

@@ -93,14 +93,13 @@ describe('Component Tests', () => {
               })
             )
           );
-          comp.user = entity;
-          comp.editForm.patchValue({ id: entity.id });
+          (comp as any).updateForm(entity);
           // WHEN
           comp.save();
           tick(); // simulate async
 
           // THEN
-          expect(service.update).toHaveBeenCalledWith(entity);
+          expect(service.update).toHaveBeenCalledWith(comp.editForm.value);
           expect(comp.isSaving).toEqual(false);
         })
       ));
@@ -111,13 +110,13 @@ describe('Component Tests', () => {
           // GIVEN
           const entity = new User();
           spyOn(service, 'create').and.returnValue(of(new HttpResponse({ body: entity })));
-          comp.user = entity;
+          (comp as any).updateForm(null);
           // WHEN
           comp.save();
           tick(); // simulate async
 
           // THEN
-          expect(service.create).toHaveBeenCalledWith(entity);
+          expect(service.create).toHaveBeenCalledWith(comp.editForm.value);
           expect(comp.isSaving).toEqual(false);
         })
       ));

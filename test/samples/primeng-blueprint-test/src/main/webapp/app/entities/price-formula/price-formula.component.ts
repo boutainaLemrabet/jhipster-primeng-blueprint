@@ -6,7 +6,7 @@ import { JhiEventManager } from 'ng-jhipster';
 import { MessageService } from 'primeng/api';
 import { IPriceFormula } from 'app/shared/model/price-formula.model';
 import { PriceFormulaService } from './price-formula.service';
-import { computeFilterMatchMode } from 'app/shared/util/request-util';
+import { computeFilterMatchMode } from 'app/core/request/request-util';
 import { ConfirmationService } from 'primeng/api';
 import { TranslateService } from '@ngx-translate/core';
 import { Table } from 'primeng/table';

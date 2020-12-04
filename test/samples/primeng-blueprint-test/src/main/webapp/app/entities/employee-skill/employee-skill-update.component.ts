@@ -3,7 +3,7 @@ import { HttpResponse, HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
-import { lazyLoadEventToServerQueryParams } from 'app/shared/util/request-util';
+import { lazyLoadEventToServerQueryParams } from 'app/core/request/request-util';
 import { LazyLoadEvent } from 'primeng/api';
 import { IEmployeeSkill } from 'app/shared/model/employee-skill.model';
 import { EmployeeSkillService } from './employee-skill.service';

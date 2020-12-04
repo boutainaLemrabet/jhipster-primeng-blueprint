@@ -13,7 +13,7 @@ import {
   lazyLoadEventToServerQueryParams,
   lazyLoadEventToRouterQueryParams,
   fillTableFromQueryParams
-} from 'app/shared/util/request-util';
+} from 'app/core/request/request-util';
 import { ConfirmationService, LazyLoadEvent } from 'primeng/api';
 import { TranslateService } from '@ngx-translate/core';
 import { ICertificateType } from 'app/shared/model/certificate-type.model';

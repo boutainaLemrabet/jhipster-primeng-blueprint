@@ -19,46 +19,63 @@
 <%_
 const tsKeyId = generateTestEntityId(user.primaryKey);
 _%>
-/* tslint:disable max-line-length */
+jest.mock('@angular/router');
+jest.mock('@ngx-translate/core');
+jest.mock('primeng/api');
+jest.mock('app/core/auth/account.service');
+
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { of, BehaviorSubject } from 'rxjs';
 import { HttpResponse } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
-import { <%= angularXAppName %>TestModule } from '../../../test.module';
-import { UserManagementComponent } from 'app/admin/user-management/user-management.component';
+import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Table } from 'primeng/table';
+import { ConfirmationService, Confirmation, MessageService } from 'primeng/api';
+import { TranslateService } from '@ngx-translate/core';
+
 import { User } from 'app/core/user/user.model';
 import { UserService } from 'app/core/user/user.service';
-import { ConfirmationService } from 'primeng/api';
-import { MockActivatedRoute } from '../../../helpers/mock-route.service';
-import { MockTable } from '../../../helpers/mock-table';
-import { JhiEventManager } from 'ng-jhipster';
+import { UserManagementComponent } from 'app/admin/user-management/user-management.component';
+import { AccountService } from "app/core/auth/account.service";
+
 
 describe('Component Tests', () => {
   describe('User Management Component', () => {
     let comp: UserManagementComponent;
     let fixture: ComponentFixture<UserManagementComponent>;
     let service: UserService;
-    let mockConfirmationService: any;
-
-    let activatedRoute: MockActivatedRoute;
-    let mockEventManager: any;
+    let confirmationService: ConfirmationService;
+    let activatedRoute: ActivatedRoute;
+    let accountService: AccountService;
 
     beforeEach(() => {
       TestBed.configureTestingModule({
           imports: [HttpClientTestingModule],
           declarations: [UserManagementComponent],
-          providers: [Router, { provide: ActivatedRoute, useValue: { data, queryParamMap } }, AccountService],
+          providers: [
+            Router,
+            ConfirmationService,
+            {
+              provide: ActivatedRoute,
+              useValue: { data: of(), queryParams: new BehaviorSubject({})}
+            },
+            AccountService,
+            MessageService,
+            TranslateService
+          ],
       })
         .overrideTemplate(UserManagementComponent, '')
         .compileComponents();
 
       fixture = TestBed.createComponent(UserManagementComponent);
       comp = fixture.componentInstance;
-      comp.userTable = new MockTable() as any;
-      service = fixture.debugElement.injector.get(UserService);
-      mockConfirmationService = fixture.debugElement.injector.get(ConfirmationService);
+      service = TestBed.inject(UserService);
+      confirmationService = fixture.debugElement.injector.get(ConfirmationService);
       activatedRoute = fixture.debugElement.injector.get(ActivatedRoute);
-      mockEventManager = fixture.debugElement.injector.get(JhiEventManager);
+      accountService= TestBed.inject(AccountService);
+      accountService.identity = jest.fn(() => of(null));
+
+      comp.userTable = {createLazyLoadMetadata: () => undefined} as Table;
     });
 
     it('Should call load all on init', fakeAsync(() => {
@@ -102,14 +119,18 @@ describe('Component Tests', () => {
     it('should call delete service using confirmDialog', fakeAsync(() => {
       // GIVEN
       spyOn(service, 'delete').and.returnValue(of({}));
+      spyOn(confirmationService, 'confirm').and.callFake((confirmation: Confirmation) => {
+        if(confirmation.accept) {
+          confirmation.accept()
+        }
+      });
 
       // WHEN
       comp.delete('AAAAAAA');
 
       // THEN
-      expect(mockConfirmationService.confirmSpy).toHaveBeenCalled();
+      expect(confirmationService.confirm).toHaveBeenCalled();
       expect(service.delete).toHaveBeenCalledWith('AAAAAAA');
-      expect(mockEventManager.broadcastSpy).toHaveBeenCalled();
     }));
   });
 });

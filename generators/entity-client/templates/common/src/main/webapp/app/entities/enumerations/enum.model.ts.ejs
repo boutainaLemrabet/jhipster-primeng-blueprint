@@ -16,12 +16,18 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-export class AlertError {
-  constructor(
-    public message: string,
-    <%_ if (enableTranslation) { _%>
-    public key?: string,
-    public params?: { [key: string]: unknown }
+export const enum <%= enumName %> {
+<%_ enumValues.forEach((enumValue) => { _%>
+    <%_ if (!enumValue.value) { _%>
+        <%= enumValue.name %> = '<%= enumValue.name %>',
+    <%_ } else { _%>
+        <%= enumValue.name %> = '<%= enumValue.value %>',
     <%_ } _%>
-  ) {}
+<%_ }); _%>
 }
+
+export const <%= _.snakeCase(enumName).toUpperCase() %>_ARRAY = [
+<%_ enumValues.forEach((enumValue) => { _%>
+    <%= enumName %>.<%= enumValue.name %>,
+<%_ }); _%>
+];

@@ -22,7 +22,6 @@ import { Observable<% if (authenticationType !== 'oauth2' && databaseType !== 's
 
 import { SERVER_API_URL } from 'app/app.constants';
 import { createRequestOption } from 'app/core/request/request-util';
-import { Pagination } from 'app/core/request/request.model';
 import { IUser } from './user.model';
 <%_ if (authenticationType !== 'oauth2' && databaseType !== 'sql' && databaseType !== 'mongodb' && databaseType !== 'couchbase') { _%>
 import { Authority } from 'app/core/user/authority.model';

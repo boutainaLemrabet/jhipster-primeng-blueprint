@@ -7,7 +7,7 @@ import { MessageService } from 'primeng/api';
 import { ITask } from 'app/shared/model/task.model';
 import { TaskType, TASK_TYPE_ARRAY } from 'app/shared/model/enumerations/task-type.model';
 import { TaskService } from './task.service';
-import { computeFilterMatchMode, lazyLoadEventToServerQueryParams } from 'app/shared/util/request-util';
+import { computeFilterMatchMode, lazyLoadEventToServerQueryParams } from 'app/core/request/request-util';
 import { ConfirmationService, LazyLoadEvent } from 'primeng/api';
 import { TranslateService } from '@ngx-translate/core';
 import { IUser } from 'app/core/user/user.model';

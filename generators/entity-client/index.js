@@ -17,8 +17,11 @@
  * limitations under the License.
  */
 /* eslint-disable consistent-return */
+const _ = require('lodash');
 const chalk = require('chalk');
 const EntityClientGenerator = require('generator-jhipster/generators/entity-client');
+
+const { writeFiles } = require('./files');
 
 module.exports = class extends EntityClientGenerator {
     constructor(args, opts) {
@@ -38,6 +41,14 @@ module.exports = class extends EntityClientGenerator {
     }
 
     get writing() {
-        return super._writing();
+        const phaseFromJHipster = super._writing();
+        const customPhaseSteps = {
+            // writeClientFiles() {
+            //     // override the writeClientFiles method from the _writing phase of JHipster
+            //     writeFiles().writeClientFiles.call(this);
+            // }
+            ...writeFiles()
+        };
+        return Object.assign(phaseFromJHipster, customPhaseSteps);
     }
 };

@@ -17,14 +17,14 @@
  limitations under the License.
 -%>
 <%_
-const tsKeyId = primaryKey.ids.map(pk => pk.field.tsTestValue).join(', ');
+const tsKeyId = generateTestEntityId(primaryKey);
 const enumImports = generateEntityClientEnumImports(fields);
 const testEntity = generateTestEntity(primaryKey);
 _%>
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 <%_ if (fieldsContainLocalDate) { _%>
-import { DATE_FORMAT } from 'app/shared/constants/input.constants';
+import { DATE_FORMAT } from 'app/core/config/input.constants';
 import { DatePipe } from '@angular/common';
 <%_ } _%>
 import { <%= entityAngularName %>Service } from 'app/entities/<%= entityFolderName %>/<%= entityFileName %>.service';
@@ -59,11 +59,34 @@ describe('Service Tests', () => {
             <%_ if (fieldsContainDate) { _%>
             currentDate = new Date();
                 <%_ if (fieldsContainLocalDate) { _%>
-            datePipe = injector.get(DatePipe);
+            datePipe = TestBed.inject(DatePipe);
                 <%_ } _%>
             <%_ } _%>
 
-            elemDefault = new <%= entityAngularName %>(<%- tsVariables.map(ts =>ts.tsTestValue).join(', ') %>);
+            elemDefault = new <%= entityAngularName %>(
+            <%_ fields.forEach((field) => {
+                const fieldType = field.fieldType;
+            _%>
+                <%_ if (field.fieldIsEnum) { _%>
+                <%= fieldType + '.' + field.enumValues[0].name %>,
+                <%_ } else if (fieldType === 'Boolean') { _%>
+                false,
+                <%_ } else if (fieldType === 'Duration') { _%>
+                'PT1S',
+                <%_ } else if (['Integer', 'Long', 'Float', 'Double', 'BigDecimal'].includes(fieldType)) { _%>
+                0,
+                <%_ } else if (fieldType === 'String' || fieldType === 'UUID') { _%>
+                'AAAAAAA',
+                <%_ } else if (['LocalDate', 'Instant', 'ZonedDateTime'].includes(fieldType)) { _%>
+                currentDate,
+                <%_ } else if (['byte[]', 'ByteBuffer'].includes(fieldType) && field.fieldTypeBlobContent !== 'text') { _%>
+                'image/png',
+                'AAAAAAA',
+                <%_ } else { // (fieldType === 'byte[]' || fieldType === 'ByteBuffer') && fieldTypeBlobContent === 'any' || (fieldType === 'byte[]' || fieldType === 'ByteBuffer') && fieldTypeBlobContent === 'image' || fieldType === 'LocalDate' _%>
+                'AAAAAAA',
+                <%_ } _%>
+            <%_ }) _%>
+            );
         });
 
         describe('Service methods', () => {

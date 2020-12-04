@@ -56,7 +56,6 @@ export class UserManagementUpdateComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.data.subscribe(({ user }) => {
-        this.route.data.subscribe(({ user }) => {
             this.updateForm(user);
     });
     this.userService.authorities().subscribe(authorities => this.authorities = authorities);
@@ -88,7 +87,7 @@ export class UserManagementUpdateComponent implements OnInit {
             });
         }
     }
-  }
+
 
   private onSaveSuccess(): void {
     this.isSaving = false;

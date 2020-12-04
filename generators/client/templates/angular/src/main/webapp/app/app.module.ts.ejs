@@ -60,6 +60,8 @@ import { PageRibbonComponent } from './layouts/profiles/page-ribbon.component';
 import { ActiveMenuDirective } from './layouts/navbar/active-menu.directive';
 <%_ } _%>
 import { ErrorComponent } from './layouts/error/error.component';
+import { MessageService, ConfirmationService } from 'primeng/api';
+import { DatePipe } from '@angular/common';
 
 @NgModule({
   imports: [
@@ -99,7 +101,10 @@ import { ErrorComponent } from './layouts/error/error.component';
     FindLanguageFromKeyPipe,
     <%_ } _%>
     httpInterceptorProviders,
-  ],
+    MessageService,
+    ConfirmationService,
+    DatePipe
+],
   declarations: [
     MainComponent,
     NavbarComponent,
