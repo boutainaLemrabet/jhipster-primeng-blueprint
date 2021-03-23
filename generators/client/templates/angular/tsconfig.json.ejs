@@ -1,5 +1,5 @@
 <%#
- Copyright 2013-2020 the original author or authors from the JHipster project.
+ Copyright 2013-2021 the original author or authors from the JHipster project.
 
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
@@ -8,7 +8,7 @@
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
-      http://www.apache.org/licenses/LICENSE-2.0
+      https://www.apache.org/licenses/LICENSE-2.0
 
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,20 +17,20 @@
  limitations under the License.
 -%>
 {
-  "compilerOptions": {
-    "target": "es6",
-    "module": "es2020",
+    "compilerOptions": {
+      "target": "es2015",
+      "module": "es2020",
     "moduleResolution": "node",
     "sourceMap": true,
     "experimentalDecorators": true,
     "strict": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    <%_ if (protractorTests) { // Prevents Jest and Mocha types conflicts. See https://github.com/jhipster/generator-jhipster/pull/13083 _%>
+<%_ if (protractorTests) { // Prevents Jest and Mocha types conflicts. See https://github.com/jhipster/generator-jhipster/pull/13083 _%>
     "skipLibCheck": true,
-    <%_ } _%>
+<%_ } _%>
     "outDir": "<%= DIST_DIR %>app",
-    "lib": ["es7", "dom"],
+    "lib": ["es2018", "dom"],
     "baseUrl": "./",
     "paths": {
       "app/*": ["<%= CLIENT_MAIN_SRC_DIR %>app/*"]
@@ -45,6 +45,8 @@
     "strictTemplates": true,
     "strictInputAccessModifiers": true,
     "preserveWhitespaces": true
-  },
-  "exclude": ["<%= CLIENT_TEST_SRC_DIR %>cypress"]
+  }
+<%_ if (cypressTests) { _%>
+  ,"exclude": ["<%= CLIENT_TEST_SRC_DIR %>cypress"]
+<%_ } _%>
 }
